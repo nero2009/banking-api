@@ -8,6 +8,10 @@ export class CreateCustomerDto {
 
     @IsString()
     @IsNotEmpty()
+    password: string;
+
+    @IsString()
+    @IsNotEmpty()
     readonly lastName: string;
 
     @IsString()

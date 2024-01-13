@@ -1,5 +1,7 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Types } from 'mongoose';
+import * as bcrypt from 'bcrypt';
+
 
 export type CustomerDocument = Customer & Document;
 
@@ -52,6 +54,12 @@ export class Customer {
   })
   address: string;
 
+  @Prop({ required: true })
+  password: string;
+
+  async comparePassword(candidatePassword: string): Promise<boolean> {
+    return bcrypt.compare(candidatePassword, this.password);
+  }
 }
 
 export const CustomerSchema = SchemaFactory.createForClass(Customer);

@@ -12,6 +12,7 @@ import { TransactionController } from './controller/transaction.controller';
 import { CustomersService } from './service/customers.service';
 import { AccountsService } from './service/accounts.service';
 import { TransactionsService } from './service/transactions.service';
+import { JwtModule } from '@nestjs/jwt';
 
 @Module({
   imports: [
@@ -21,6 +22,10 @@ import { TransactionsService } from './service/transactions.service';
     MongooseModule.forFeature([{ name: Customer.name, schema: CustomerSchema }]),
     MongooseModule.forFeature([{ name: Account.name, schema: AccountSchema }]),
     MongooseModule.forFeature([{ name: Transaction.name, schema: TransactionSchema }]),
+    JwtModule.register({
+      secret: 'your-secret-key', // Replace with a secure secret key
+      signOptions: { expiresIn: '1h' }, // Token expiration time
+    }),
   ],
   controllers: [AppController, CustomerController, AccountController, TransactionController],
   providers: [AppService, CustomersService, AccountsService, TransactionsService],

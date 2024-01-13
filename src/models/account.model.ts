@@ -36,10 +36,11 @@ export class Account {
   })
   updatedAt: number;
 
-  @Prop({type: Types.ObjectId, ref: Account.name, })
+  @Prop({type: [Types.ObjectId], ref: Transaction.name })
   transactions: Types.ObjectId[];
 
-
+  @Prop({type: Types.ObjectId, ref: Customer.name, required: true })
+  customerId: Types.ObjectId;
 }
 
 export const AccountSchema = SchemaFactory.createForClass(Account);

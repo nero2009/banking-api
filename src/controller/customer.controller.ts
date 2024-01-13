@@ -31,4 +31,9 @@ export class CustomerController {
   updateCustomer(@Param('id') id: string, @Body() updateCustomerPayload: UpdateUserDto) {
     return this.customerService.update(id, updateCustomerPayload);
   }
+
+  @Get(':id/account')
+  getAccountByCustomerId(@Param('id') id: string) {
+    return this.customerService.getAccountByCustomerId(id);
+  }
 }

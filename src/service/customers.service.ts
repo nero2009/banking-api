@@ -22,11 +22,13 @@ export class CustomersService {
         balance: 0,
         accountNumber: generateBankAccountNumber()
       })
-      await account.save({session})
+      
 
       const createdUser = new this.customerModel(user);
       createdUser.account = account._id;
       await createdUser.save({session});
+      account.customerId = createdUser._id;
+      await account.save({session})
       await session.commitTransaction();
       session.endSession();
       return createdUser
@@ -52,5 +54,10 @@ export class CustomersService {
 
   async update(id: string, user: UpdateUserDto): Promise<Customer> {
     return this.customerModel.findOneAndUpdate({ _id: id }, user, { new: true });
+  }
+
+  async getAccountByCustomerId(customerId: string): Promise<Customer> {
+    const customer = await this.customerModel.findById(customerId).populate('account').exec();
+    return customer
   }
 }

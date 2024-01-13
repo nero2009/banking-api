@@ -9,12 +9,13 @@ import { generateBankAccountNumber } from './utils';
 export class AccountsService {
   constructor(@InjectModel(Account.name) private accountModel: Model<AccountDocument>) {}
 
-  async create(): Promise<Account> {
+  async create(customerId: string): Promise<Account> {
     const ac = generateBankAccountNumber()
     Logger.error('ac :>> ', ac);
     const createdAccount = new this.accountModel({
       balance: 0,
-      accountNumber: ac
+      accountNumber: ac,
+      customerId
     });
     this.accountModel.validate()
     return createdAccount.save();
@@ -25,11 +26,14 @@ export class AccountsService {
   }
 
   async findOne(id: string): Promise<Account> {
-    return this.accountModel.findById(id).exec();
+    return this.accountModel.findById(id).populate('transactions').exec();
   }
 
-  async getAccountByCustomerId(id: string): Promise<Account> {
-    return this.accountModel.findOne({customer: id}).exec();
+  async getAccountByCustomerId(customerId: string): Promise<Account> {
+    Logger.log('customerId :>> ', customerId);
+    const a  =  await this.accountModel.findOne({customerId}).exec();
+  Logger.log('a :>> ', a);
+    return a
   }
 
 }

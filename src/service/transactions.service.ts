@@ -1,5 +1,5 @@
 // transactions.service.ts
-import { HttpException, Injectable } from '@nestjs/common';
+import { HttpException, Injectable, Logger } from '@nestjs/common';
 import { Model } from 'mongoose';
 import { v4 as uuidv4 } from 'uuid';
 import { InjectModel } from '@nestjs/mongoose';
@@ -66,39 +66,47 @@ export class TransactionsService {
     status: TransactionStatus;
   }> {
     const session = await this.transactionModel.startSession();
+    // session.startTransaction();
+
     try {
-      if (amount <= 0) throw new Error('Invalid amount');
-      const account = await this.accountModel
-        .findOne({ accountNumber: accountNumber })
-        .exec();
-
-      if (!account) throw new Error('Account not found');
-
-      const reference = uuidv4();
-      const createdTransaction = new this.transactionModel({
-        type: type,
-        amount: amount,
-        accountNumber: accountNumber,
-        description: description,
-        status: TransactionStatus.PENDING,
+      return session.withTransaction(async () => {
+        if (amount <= 0) throw new Error('Invalid amount');
+        const account = await this.accountModel
+          .findOne({ accountNumber: accountNumber })
+          .exec();
+  
+        if (!account) throw new Error('Account not found');
+  
+        const reference = uuidv4();
+        const createdTransaction = new this.transactionModel({
+          type: type,
+          amount: amount,
+          accountNumber: accountNumber,
+          description: description,
+          status: TransactionStatus.PENDING,
+        });
+        createdTransaction.reference = reference;
+  
+        const a = await this.accountModel
+          .findOneAndUpdate(
+            { accountNumber: accountNumber },
+            { balance: account.balance + amount },
+          )
+          .exec();
+        a.transactions.push(createdTransaction._id);
+        a.save({ session });
+        createdTransaction.status = TransactionStatus.SUCCESS;
+        await createdTransaction.save({ session })
+  
+        return {
+          reference: reference,
+          status: TransactionStatus.SUCCESS,
+        };
       });
-      createdTransaction.reference = reference;
-
-      const a = await this.accountModel
-        .findOneAndUpdate(
-          { accountNumber: accountNumber },
-          { balance: account.balance + amount },
-        )
-        .exec();
-      a.save({ session });
-      createdTransaction.status = TransactionStatus.SUCCESS;
-      await createdTransaction.save({ session });
-
-      return {
-        reference: reference,
-        status: TransactionStatus.SUCCESS,
-      };
+     
     } catch (error) {
+      await session.abortTransaction();
+      session.endSession();
       throw new HttpException(error.message, 500);
     }
   }
@@ -112,7 +120,8 @@ export class TransactionsService {
   }> {
     const session = await this.transactionModel.startSession();
     try {
-      session.startTransaction();
+
+      return session.withTransaction(async () => {
 
       if (amount <= 0) {
         throw new Error('Invalid amount');
@@ -135,20 +144,21 @@ export class TransactionsService {
       const a = await this.accountModel
         .findOneAndUpdate(
           { accountNumber: accountNumber },
-          { balance: account.balance - amount },
+          { balance: account.balance - amount,},
         )
         .exec();
+      a.transactions.push(createdTransaction._id);
       await a.save({ session });
       createdTransaction.status = TransactionStatus.SUCCESS;
       await createdTransaction.save({ session });
 
-      await session.commitTransaction();
-      session.endSession();
 
       return {
         reference: reference,
         status: TransactionStatus.SUCCESS,
       };
+      })
+
     } catch (error) {
       await session.abortTransaction();
       session.endSession();

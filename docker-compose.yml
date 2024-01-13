@@ -6,7 +6,7 @@ services:
     container_name: my-mongodb
     environment:
       MONGO_INITDB_ROOT_USERNAME: user
-      MONGO_INITDB_ROOT_PASSWORD: password
+      MONGO_INITDB_ROOT_PASSWORD: giGspLO9ltfQW49X
       MONGO_INITDB_DATABASE: banking_schema
     ports:
       - "27017:27017"
@@ -16,3 +16,5 @@ services:
 volumes:
   mongodb_data:
     driver: local
+
+

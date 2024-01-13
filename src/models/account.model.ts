@@ -2,6 +2,7 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Types } from 'mongoose';
 import { Customer } from './customer.model';
+import { Transaction } from './transaction.model';
 
 export type AccountDocument = Account & Document;
 
@@ -23,11 +24,20 @@ export class Account {
   })
   accountNumber: number;
 
-  @Prop()
-  createdAt: Date;
+  @Prop({
+    type: Number,
+    default: Date.now()
+  })
+  createdAt: number;
 
-  @Prop()
-  updatedAt: Date;
+  @Prop({
+    type: Number,
+    default: Date.now()
+  })
+  updatedAt: number;
+
+  @Prop({type: Types.ObjectId, ref: Account.name, })
+  transactions: Types.ObjectId[];
 
 
 }

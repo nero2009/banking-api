@@ -13,8 +13,6 @@ export enum TransactionStatus {
 
 @Schema()
 export class Transaction {
-  @Prop({ type: Types.ObjectId, ref: 'Account', required: true  })
-  account: Types.ObjectId;
 
   @Prop()
   type: string;

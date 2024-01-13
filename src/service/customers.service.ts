@@ -1,40 +1,56 @@
 // users.service.ts
 import { Injectable } from '@nestjs/common';
 import { Model } from 'mongoose';
+import { Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Customer, UserDocument } from '../models/customer.model';
+import { Customer, CustomerDocument } from '../models/customer.model';
 import { Account, AccountDocument } from 'src/models/account.model';
+import { CreateCustomerDto } from 'src/dto/create-customer.dto';
+import { generateBankAccountNumber } from './utils';
+import { AccountsService } from './accounts.service';
+import { UpdateUserDto } from 'src/dto/update-customer.dto';
 
 @Injectable()
-export class UsersService {
-  constructor(@InjectModel(Customer.name) private userModel: Model<UserDocument>, @InjectModel(Account.name) private accountModel: Model<AccountDocument>) {}
+export class CustomersService {
+  constructor(@InjectModel(Customer.name) private customerModel: Model<CustomerDocument>, @InjectModel(Account.name) private accountModel: Model<AccountDocument>, private readonly accountsService: AccountsService) {}
 
-  async create(user): Promise<Customer> {
-
+  async create(user:CreateCustomerDto): Promise<Customer> {
+    const session = await this.customerModel.startSession();
+    session.startTransaction();
     try {
-      const createdUser = new this.userModel(user);
-      const account = await this.accountModel.create({})
+      const account = new this.accountModel({
+        balance: 0,
+        accountNumber: generateBankAccountNumber()
+      })
+      await account.save({session})
+
+      const createdUser = new this.customerModel(user);
       createdUser.account = account._id;
-      return createdUser.save();
+      await createdUser.save({session});
+      await session.commitTransaction();
+      session.endSession();
+      return createdUser
     } catch (error) {
+      await session.abortTransaction();
+      session.endSession();
       throw new Error(error.message);
     }
     
   }
 
   async findAll(): Promise<Customer[]> {
-    return this.userModel.find().exec();
+    return this.customerModel.find().exec();
   }
 
   async findOne(id: string): Promise<Customer> {
-    return this.userModel.findById(id).exec();
+    return this.customerModel.findById(id).exec();
   }
 
   async delete(id: string): Promise<Customer> {
-    return this.userModel.findByIdAndDelete(id);
+    return this.customerModel.findByIdAndDelete(id);
   }
 
-  async update(id: string, user: Customer): Promise<Customer> {
-    return this.userModel.findOneAndUpdate({ _id: id }, user, { new: true });
+  async update(id: string, user: UpdateUserDto): Promise<Customer> {
+    return this.customerModel.findOneAndUpdate({ _id: id }, user, { new: true });
   }
 }
